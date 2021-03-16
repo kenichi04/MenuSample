@@ -3,6 +3,7 @@ package android.wings.websarva.menusample;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +43,9 @@ public class MenuListActivity extends AppCompatActivity {
 
         _lvMenu.setAdapter(adapter);
         _lvMenu.setOnItemClickListener(new ListItemClickListener());
+
+        // コンテキストメニューを表示させる画面部品の登録
+        registerForContextMenu(_lvMenu);
     }
 
     //menulistを作成メソッド
@@ -142,6 +147,43 @@ public class MenuListActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    // コンテキストメニュー表示
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, view, menuInfo);
+        // メニューインフレータ取得
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_context_menu_list, menu);
+        // コンテキストメニューのタイトル設定
+        menu.setHeaderTitle(R.string.menu_list_context_header);
+    }
+
+    // コンテキストメニュー選択時
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        // 長押しされたビューに関する情報が格納されたオブジェクトを取得
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        // 長押しされたリストのポジションを取得し、_menuListからMapオブジェクトを取得
+        int listPosition = info.position;
+        Map<String, Object> menu = _menuList.get(listPosition);
+
+        // 選択されたメニュー（コンテキストメニュー内）
+        int itemId = item.getItemId();
+
+        switch(itemId) {
+            case R.id.menuListContextDesc:
+                String desc = (String) menu.get("desc");
+                Toast.makeText(MenuListActivity.this, desc, Toast.LENGTH_LONG).show();
+                break;
+            case R.id.menuListContextOrder:
+                order(menu);
+                break;
+        }
+
+        // 親クラスの同盟メソッドを呼び出し、戻り値を返す。
+        return super.onContextItemSelected(item);
+    }
+
     private class ListItemClickListener implements AdapterView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -149,6 +191,9 @@ public class MenuListActivity extends AppCompatActivity {
             //タップされた行のデータ取得。SimpleAdapterでは1行分はMap型。
             Map<String, Object> item = (Map<String, Object>) parent.getItemAtPosition(position);
 
+            order(item);
+
+            /*
             //nameキーとpriceキーに入っている値を取得（Mapのバリューobject型のため、キャスト必要）
             String menuName = (String)item.get("name");
             Integer menuPrice = (Integer)item.get("price");
@@ -159,6 +204,20 @@ public class MenuListActivity extends AppCompatActivity {
             intent.putExtra("menuPrice", menuPrice + "円");
 
             startActivity(intent);
+             */
         }
+    }
+
+    private void order(Map<String, Object> menu) {
+
+        // MapのバリューがObject型のためキャストが必要
+        String menuName = (String) menu.get("name");
+        Integer menuPrice = (Integer) menu.get("price");
+
+        Intent intent = new Intent(MenuListActivity.this, MenuThanksActivity.class);
+        intent.putExtra("menuName", menuName);
+        intent.putExtra("menuPrice", menuPrice + "円");
+
+        startActivity(intent);
     }
 }
